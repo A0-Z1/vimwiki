@@ -961,15 +961,15 @@ function! s:process_tag_precode(line, quote) abort
     let line = substitute(line, '^\s*', '', '')
     if !quote
     " Check if must decrease level
-      let line = '<pre><code>' . line
+      let line = '<blockquote>' . line
       let quote = 1
     endif
     let processed = 1
-    call add(lines, line)
+    call add(lines, line . '<br>')
 
   " Check if end
   elseif quote
-    call add(lines, '</code></pre>')
+    call add(lines, '</blockquote>')
     let quote = 0
   endif
 
@@ -978,37 +978,45 @@ endfunction
 
 function! s:process_tag_arrow_quote(line, arrow_quote) abort
   let lines = []
-  let arrow_quote = a:arrow_quote
-  let processed = 0
   let line = a:line
+  let quote = a:arrow_quote
+  let double_quote = 0
+  let processed = 0
 
-  " Check if must increase level
-  if line =~# '^' . repeat('\s*&gt;', arrow_quote + 1)
-    " Increase arrow_quote
-    while line =~# '^' . repeat('\s*&gt;', arrow_quote + 1)
-      call add(lines, '<blockquote>')
-      call add(lines, '<p>')
-      let arrow_quote .= 1
-    endwhile
-
-    " Treat & Add line
-    let stripped_line = substitute(a:line, '^\%(\s*&gt;\)\+', '', '')
-    if stripped_line =~# '^\s*$'
-      call add(lines, '</p>')
-      call add(lines, '<p>')
+  " Check if start
+  if line =~# '^\%\(&gt;\)\{2,}'
+    let line = substitute(line, '^\%\(&gt;\)*', '', '')
+    if !quote
+    " Check if must increase level
+      let line = repeat('<blockquote>', 2) . line
+      let quote = 2
+    elseif quote == 1
+      let line = '<blockquote>' . line
+      let quote = 2
     endif
-    call add(lines, stripped_line)
     let processed = 1
+    let double_quote = 1
+    call add(lines, line . '<br>')
 
-  " Check if must decrease level
-  elseif arrow_quote > 0
-    while line !~# '^' . repeat('\s*&gt;', arrow_quote - 1)
-      call add(lines, '</p>')
-      call add(lines, '</blockquote>')
-      let arrow_quote -= 1
-    endwhile
+  elseif (line =~# '^&gt;') && (double_quote == 0)
+    let line = substitute(line, '^\%\(&gt;\)*', '', '')
+    if quote!
+      let line = '<blockquote>' . line
+      let quote = 1
+    elseif quote == 2
+      let line = line . '</blockquote>'
+      let quote = 1
+    endif
+    let processed = 1
+    call add(lines, line . '<br>')
+
+  " Check if end
+  elseif quote
+    call add(lines, repeat('</blockquote>', quote))
+    let quote = 0
   endif
-  return [processed, lines, arrow_quote]
+
+  return [processed, lines, quote]
 endfunction
 
 
