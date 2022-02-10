@@ -1000,7 +1000,7 @@ function! s:process_tag_arrow_quote(line, arrow_quote) abort
 
   elseif (line =~# '^&gt;') && (double_quote == 0)
     let line = substitute(line, '^\%\(&gt;\)*', '', '')
-    if quote!
+    if !quote
       let line = '<blockquote>' . line
       let quote = 1
     elseif quote == 2
